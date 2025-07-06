@@ -1,6 +1,5 @@
 <template>
   <UContainer>
-    <ULink to="/admin">Admin</ULink>
     <div class="my-12">
       <UForm :state class="mx-auto w-lg flex items-center gap-2" @submit.prevent="handleSubmit">
         <UInput v-model="state.url" class="flex-1" placeholder="Coller une URL YouTube..." />

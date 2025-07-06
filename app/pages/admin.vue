@@ -20,13 +20,7 @@
       <template #actions-cell="{ row }">
         <div class="flex items-center justify-end gap-2">
           <div class="flex items-center gap-1">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-copy'"
-              square
-              @click="copy(row.original.url)"
-            />
+            <CopyButton :value="row.original.url" />
             <UButton
               color="neutral"
               variant="subtle"
@@ -55,9 +49,9 @@
 
 <script setup lang="ts">
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import CopyButton from '~/CopyButton.vue';
 
 const toast = useToast();
-const { copy, copied } = useClipboard();
 
 const columns = [{ id: 'url', header: 'URL', accessorKey: 'url' }, { id: 'actions' }];
 
