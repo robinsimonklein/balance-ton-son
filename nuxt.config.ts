@@ -9,6 +9,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     downloadPath: process.env.NUXT_DOWNLOAD_PATH,
     public: {
+      isAdmin: process.env.NUXT_PUBLIC_IS_ADMIN || 'false',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,
     },
@@ -17,6 +18,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/admin/**': {
       ssr: false,
+      appMiddleware: 'admin',
     },
   },
 
