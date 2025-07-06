@@ -34,8 +34,8 @@
             :color="row.original.isDownloaded ? 'success' : 'primary'"
             :icon="row.original.isDownloaded ? 'i-lucide-check' : 'i-lucide-download'"
             square
-            :loading="adminStore.isDownloading === row.original.youtube_id"
-            :disabled="!!adminStore.isDownloading"
+            :loading="row.original.isDownloading"
+            :disabled="!adminStore.canDownload"
             @click="adminStore.downloadSong(row.original.youtube_id)"
           />
         </div>

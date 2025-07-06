@@ -2,6 +2,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
 
+const MAX_CONCURRENT_DOWNLOADS = 5;
+
 export const useAdminStore = defineStore('admin', () => {
   const toast = useToast();
   const supabase = useSupabase();
@@ -17,7 +19,7 @@ export const useAdminStore = defineStore('admin', () => {
   const downloadedIds = shallowRef<string[]>([]);
 
   // Download state
-  const isDownloading = ref<string | null>(null);
+  const downloadingSongIds = reactive(new Set<string>());
 
   // Connection state
   const connection = ref<ConnectionStatus>({ status: '', label: 'Connexion...', color: 'neutral' });
@@ -28,10 +30,13 @@ export const useAdminStore = defineStore('admin', () => {
     _songs.value.map(song => {
       return {
         ...song,
+        isDownloading: downloadingSongIds.has(song.youtube_id),
         isDownloaded: downloadedIds.value.includes(song.youtube_id),
       };
     }),
   );
+
+  const canDownload = computed(() => downloadingSongIds.size < MAX_CONCURRENT_DOWNLOADS);
 
   // Fetch songs
   const fetchSongs = async () => {
@@ -57,14 +62,14 @@ export const useAdminStore = defineStore('admin', () => {
   // Download a song
   const downloadSong = async (youtubeId: string) => {
     try {
-      isDownloading.value = youtubeId;
+      downloadingSongIds.add(youtubeId);
       await $fetch('/api/downloads', { method: 'POST', body: { id: youtubeId } });
       await refreshDownloadedIds();
     } catch (error) {
       console.error(error);
       toast.add({ title: "Une erreur s'est produite", description: (error as Error).message, color: 'error' });
     } finally {
-      isDownloading.value = null;
+      downloadingSongIds.delete(youtubeId);
     }
   };
 
@@ -147,8 +152,9 @@ export const useAdminStore = defineStore('admin', () => {
     songs,
     songsStatus,
     downloadedIds,
-    isDownloading,
+    downloadingSongIds,
     connection,
+    canDownload,
     fetchSongs,
     refreshDownloadedIds,
     downloadSong,
