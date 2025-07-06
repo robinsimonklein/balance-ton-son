@@ -2,13 +2,16 @@ import { z } from 'zod';
 import { spawn } from 'node:child_process';
 
 const schema = z.object({
-  url: z.string().includes('youtube.com'),
+  id: z.string(),
 });
 
 export default defineEventHandler(async event => {
-  const { url } = await readValidatedBody(event, schema.parse);
+  const { id } = await readValidatedBody(event, schema.parse);
 
-  const outputDir = '~/Music/Mixxx/Test'; // à adapter si besoin
+  const url = getYoutubeUrl(id);
+
+  const { downloadPath } = useRuntimeConfig();
+
   const args = [
     url,
     '-x',
@@ -19,9 +22,10 @@ export default defineEventHandler(async event => {
     'duration < 960',
     '--max-filesize',
     '100M',
-    '--write-thumbnail',
+    '--embed-metadata',
+    '--embed-thumbnail',
     '-o',
-    `${outputDir}/%(title)s.%(ext)s`,
+    `${downloadPath}/%(id)s.%(ext)s`,
   ];
 
   return new Promise((resolve, reject) => {
