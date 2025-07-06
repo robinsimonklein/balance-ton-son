@@ -4,6 +4,9 @@ export const useAdminStore = defineStore('admin', () => {
   const toast = useToast();
   const supabase = useSupabase();
 
+  // State
+  const isCommandPaletteOpen = ref(false);
+
   // Songs data
   const _songs = ref<Database['public']['Tables']['songs']['Row'][]>([]);
   const songsStatus = ref('idle');
@@ -16,7 +19,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   // Connection state
   type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
-  const connection = ref<ConnectionStatus>({ status: '', label: 'Connecting...', color: 'neutral' });
+  const connection = ref<ConnectionStatus>({ status: '', label: 'Connexion...', color: 'neutral' });
   let channel: RealtimeChannel;
 
   const songs = computed(() =>
@@ -68,17 +71,17 @@ export const useAdminStore = defineStore('admin', () => {
     connection.value.status = status;
     switch (status) {
       case 'SUBSCRIBED':
-        connection.value.label = 'Connected';
+        connection.value.label = 'Connecté';
         connection.value.color = 'success';
         break;
       case 'CHANNEL_ERROR':
       case 'TIMED_OUT':
-        connection.value.label = 'Connection Error';
+        connection.value.label = 'Erreur';
         connection.value.color = 'error';
         if (err) console.error('Realtime Error:', err.message);
         break;
       case 'CLOSED':
-        connection.value.label = 'Disconnected';
+        connection.value.label = 'Déconnecté';
         connection.value.color = 'warning';
         break;
     }
@@ -121,6 +124,7 @@ export const useAdminStore = defineStore('admin', () => {
   };
 
   return {
+    isCommandPaletteOpen,
     songs,
     songsStatus,
     downloadedIds,

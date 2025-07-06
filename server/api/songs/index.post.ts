@@ -1,15 +1,21 @@
 import { z } from 'zod';
 
 const schema = z.object({
-  url: z.string().includes('youtube.com'),
+  youtubeId: z.string().optional(),
+  url: z.string().includes('youtube.com').optional(),
 });
 
 export default defineEventHandler(async event => {
   const body = await readValidatedBody(event, schema.parse);
 
-  const youtubeId = getYoutubeId(body.url);
+  let youtubeId: string | null = null;
+  if (body.youtubeId) {
+    youtubeId = body.youtubeId;
+  } else if (body.url) {
+    youtubeId = getYoutubeId(body.url);
+  }
 
-  if (!youtubeId) throw createError({ statusCode: 400, message: 'Invalid URL' });
+  if (!youtubeId?.length) throw createError({ statusCode: 400, message: 'Invalid body' });
 
   // Check if the song already exists in the database
   const { data: existingSong, error: selectError } = await useSupabase()
