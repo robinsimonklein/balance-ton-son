@@ -16,6 +16,11 @@
               icon: 'i-lucide-qr-code',
               onSelect: showQRCode,
             },
+            {
+              label: 'Ouvrir le dossier',
+              icon: 'i-lucide-folder',
+              onSelect: openDownloadsFolder,
+            },
           ]"
         />
       </div>
@@ -46,6 +51,10 @@ const adminStore = useAdminStore();
 const qrCodeModal = overlay.create(AdminQRCode);
 
 const showQRCode = () => {
-  const instance = qrCodeModal.open();
+  qrCodeModal.open();
+};
+
+const openDownloadsFolder = async () => {
+  await $fetch('/api/downloads/open-folder', { method: 'POST' });
 };
 </script>
