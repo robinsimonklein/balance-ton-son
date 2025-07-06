@@ -7,12 +7,19 @@
     </template>
     <template #title-cell="{ row }">
       <div>
-        <p class="text-default font-semibold">{{ row.original.title }}</p>
+        <UButton class="text-default font-semibold px-0" variant="link" :to="row.original.url" external target="_blank">
+          {{ row.original.title }}
+        </UButton>
         <p v-if="row.original.artist">{{ row.original.artist }}</p>
       </div>
     </template>
     <template #duration-cell="{ row }">
       <span>{{ formatDuration(row.original.duration) }}</span>
+    </template>
+    <template #createdAt-cell="{ row }">
+      <p class="text-xs">
+        <RelativeTime v-if="row.original.created_at" :date="row.original.created_at" />
+      </p>
     </template>
     <template #actions-cell="{ row }">
       <div class="flex items-center justify-end gap-4">
@@ -51,6 +58,7 @@ const columns = [
   { id: 'cover', header: '', accessorKey: 'cover' },
   { id: 'duration', header: 'Durée', accessorKey: 'duration' },
   { id: 'title', header: 'Titre', accessorKey: 'title' },
+  { id: 'createdAt', header: 'Ajoutée', accessorKey: 'created_at' },
   { id: 'actions' },
 ];
 </script>
