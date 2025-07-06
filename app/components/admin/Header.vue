@@ -7,7 +7,14 @@
             {
               label: 'Ajouter',
               icon: 'i-lucide-plus',
-              onSelect: () => (adminStore.isCommandPaletteOpen = true),
+              onSelect: () => {
+                adminStore.isCommandPaletteOpen = true;
+              },
+            },
+            {
+              label: 'Rejoindre',
+              icon: 'i-lucide-qr-code',
+              onSelect: showQRCode,
             },
           ]"
         />
@@ -31,5 +38,14 @@
 </template>
 
 <script setup lang="ts">
+import { AdminQRCode } from '#components';
+
+const overlay = useOverlay();
 const adminStore = useAdminStore();
+
+const qrCodeModal = overlay.create(AdminQRCode);
+
+const showQRCode = () => {
+  const instance = qrCodeModal.open();
+};
 </script>

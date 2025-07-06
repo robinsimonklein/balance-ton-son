@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY,
     youtubeApiKey: process.env.NUXT_YOUTUBE_API_KEY,
     public: {
+      qrCodeUrl: process.env.NUXT_PUBLIC_QR_CODE_URL,
       isAdmin: process.env.NUXT_PUBLIC_IS_ADMIN || 'false',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY,

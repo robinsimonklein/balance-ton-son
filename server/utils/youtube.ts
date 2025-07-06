@@ -32,7 +32,6 @@ export const searchYoutube = async (query: string) => {
     // Detect youtube URL and search by ID
 
     const youtubeId = getYoutubeId(query);
-    console.log('ici', query, youtubeId);
     if (!youtubeId) return [];
 
     results = results = await $fetch<YoutubeResponse>('https://www.googleapis.com/youtube/v3/videos', {
@@ -43,7 +42,6 @@ export const searchYoutube = async (query: string) => {
         part: 'snippet,contentDetails',
       },
     });
-    console.log(results);
   } else {
     results = await $fetch<YoutubeResponse>('https://www.googleapis.com/youtube/v3/search', {
       method: 'GET',

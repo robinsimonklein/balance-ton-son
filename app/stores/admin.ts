@@ -1,5 +1,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
+type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
+
 export const useAdminStore = defineStore('admin', () => {
   const toast = useToast();
   const supabase = useSupabase();
@@ -18,9 +20,9 @@ export const useAdminStore = defineStore('admin', () => {
   const isDownloading = ref<string | null>(null);
 
   // Connection state
-  type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
   const connection = ref<ConnectionStatus>({ status: '', label: 'Connexion...', color: 'neutral' });
   let channel: RealtimeChannel;
+  const reconnectInterval = ref<ReturnType<typeof setInterval> | null>(null);
 
   const songs = computed(() =>
     _songs.value.map(song => {
@@ -73,12 +75,22 @@ export const useAdminStore = defineStore('admin', () => {
       case 'SUBSCRIBED':
         connection.value.label = 'Connecté';
         connection.value.color = 'success';
+        stopReconnectTimer();
         break;
       case 'CHANNEL_ERROR':
       case 'TIMED_OUT':
         connection.value.label = 'Erreur';
         connection.value.color = 'error';
         if (err) console.error('Realtime Error:', err.message);
+
+        // Start interval only if it's not already running
+        if (!reconnectInterval.value) {
+          console.log('Connection lost. Starting reconnect attempts every 10 seconds...');
+          reconnectInterval.value = setInterval(() => {
+            console.log('Attempting to reconnect...');
+            subscribeToChannel();
+          }, 10000); // Try every 10 seconds
+        }
         break;
       case 'CLOSED':
         connection.value.label = 'Déconnecté';
@@ -87,10 +99,16 @@ export const useAdminStore = defineStore('admin', () => {
     }
   };
 
+  const stopReconnectTimer = () => {
+    if (reconnectInterval.value) {
+      clearInterval(reconnectInterval.value);
+      reconnectInterval.value = null;
+    }
+  };
+
   // Handle realtime updates
-  const handleRealtimeUpdate = (payload: any) => {
-    console.log('Realtime update received:', payload);
-    fetchSongs();
+  const handleRealtimeUpdate = async () => {
+    await fetchSongs();
   };
 
   // Subscribe to channel
@@ -114,6 +132,7 @@ export const useAdminStore = defineStore('admin', () => {
     if (channel) {
       supabase.removeChannel(channel);
     }
+    stopReconnectTimer();
   };
 
   // Initialize store
