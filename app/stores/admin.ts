@@ -1,0 +1,136 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
+
+export const useAdminStore = defineStore('admin', () => {
+  const toast = useToast();
+  const supabase = useSupabase();
+
+  // Songs data
+  const _songs = ref<Database['public']['Tables']['songs']['Row'][]>([]);
+  const songsStatus = ref('idle');
+
+  // Downloaded IDs
+  const downloadedIds = shallowRef<string[]>([]);
+
+  // Download state
+  const isDownloading = ref<string | null>(null);
+
+  // Connection state
+  type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
+  const connection = ref<ConnectionStatus>({ status: '', label: 'Connecting...', color: 'neutral' });
+  let channel: RealtimeChannel;
+
+  const songs = computed(() =>
+    _songs.value.map(song => {
+      return {
+        ...song,
+        isDownloaded: downloadedIds.value.includes(song.youtube_id),
+      };
+    }),
+  );
+
+  // Fetch songs
+  const fetchSongs = async () => {
+    try {
+      songsStatus.value = 'pending';
+      _songs.value = await $fetch('/api/songs');
+      songsStatus.value = 'success';
+    } catch (error) {
+      console.error(error);
+      songsStatus.value = 'error';
+    }
+  };
+
+  // Refresh downloaded IDs
+  const refreshDownloadedIds = async () => {
+    try {
+      downloadedIds.value = await $fetch('/api/downloads');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Download a song
+  const downloadSong = async (youtubeId: string) => {
+    try {
+      isDownloading.value = youtubeId;
+      await $fetch('/api/downloads', { method: 'POST', body: { id: youtubeId } });
+      await refreshDownloadedIds();
+    } catch (error) {
+      console.error(error);
+      toast.add({ title: "Une erreur s'est produite", description: (error as Error).message, color: 'error' });
+    } finally {
+      isDownloading.value = null;
+    }
+  };
+
+  // Set connection status
+  const setConnectionStatus = (status: string, err?: Error) => {
+    connection.value.status = status;
+    switch (status) {
+      case 'SUBSCRIBED':
+        connection.value.label = 'Connected';
+        connection.value.color = 'success';
+        break;
+      case 'CHANNEL_ERROR':
+      case 'TIMED_OUT':
+        connection.value.label = 'Connection Error';
+        connection.value.color = 'error';
+        if (err) console.error('Realtime Error:', err.message);
+        break;
+      case 'CLOSED':
+        connection.value.label = 'Disconnected';
+        connection.value.color = 'warning';
+        break;
+    }
+  };
+
+  // Handle realtime updates
+  const handleRealtimeUpdate = (payload: any) => {
+    console.log('Realtime update received:', payload);
+    fetchSongs();
+  };
+
+  // Subscribe to channel
+  const subscribeToChannel = () => {
+    // If a channel already exists, remove it to start fresh
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+
+    channel = supabase.channel('public:songs');
+
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'songs' }, handleRealtimeUpdate)
+      .subscribe((status, err) => {
+        setConnectionStatus(status, err);
+      });
+  };
+
+  // Cleanup channel
+  const cleanupChannel = () => {
+    if (channel) {
+      supabase.removeChannel(channel);
+    }
+  };
+
+  // Initialize store
+  const initialize = () => {
+    fetchSongs();
+    refreshDownloadedIds();
+    subscribeToChannel();
+  };
+
+  return {
+    songs,
+    songsStatus,
+    downloadedIds,
+    isDownloading,
+    connection,
+    fetchSongs,
+    refreshDownloadedIds,
+    downloadSong,
+    subscribeToChannel,
+    cleanupChannel,
+    initialize,
+  };
+});

@@ -2,21 +2,28 @@
   <UContainer>
     <div class="my-4 flex justify-end">
       <div class="flex items-center gap-2 text-sm">
-        <UChip :color="connection.color" standalone inset />
-        <p>{{ connection.label }}</p>
+        <UChip :color="adminStore.connection.color" standalone inset />
+        <p>{{ adminStore.connection.label }}</p>
         <UButton
-          v-if="connection.status !== 'SUBSCRIBED'"
+          v-if="adminStore.connection.status !== 'SUBSCRIBED'"
           size="xs"
           color="neutral"
           variant="soft"
           icon="i-lucide-refresh-ccw"
           square
-          @click="channel.subscribe()"
+          @click="adminStore.subscribeToChannel"
         />
       </div>
     </div>
 
-    <UTable :data="data || []" :columns :loading="status === 'pending'">
+    <pre class="text-xs">{{ adminStore.songs }}</pre>
+
+    <UTable :data="adminStore.songs" :columns="columns" :loading="adminStore.songsStatus === 'pending'">
+      <template #cover-cell="{ row }">
+        <div class="size-10 rounded-sm overflow-hidden">
+          <img v-if="row.original.cover?.length" :src="row.original.cover" class="w-full h-full object-cover" alt="" />
+        </div>
+      </template>
       <template #actions-cell="{ row }">
         <div class="flex items-center justify-end gap-2">
           <div class="flex items-center gap-1">
@@ -33,12 +40,13 @@
           </div>
           <div class="flex items-center gap-1">
             <UButton
-              variant="solid"
-              icon="i-lucide-download"
+              :variant="row.original.isDownloaded ? 'subtle' : 'solid'"
+              :color="row.original.isDownloaded ? 'success' : 'primary'"
+              :icon="row.original.isDownloaded ? 'i-lucide-check' : 'i-lucide-download'"
               square
-              :loading="isDownloading === row.original.youtube_id"
-              :disabled="!!isDownloading"
-              @click="download(row.original.youtube_id)"
+              :loading="adminStore.isDownloading === row.original.youtube_id"
+              :disabled="!!adminStore.isDownloading"
+              @click="adminStore.downloadSong(row.original.youtube_id)"
             />
           </div>
         </div>
@@ -48,88 +56,29 @@
 </template>
 
 <script setup lang="ts">
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import CopyButton from '~/CopyButton.vue';
 
-const toast = useToast();
+const adminStore = useAdminStore();
+const interval = ref<ReturnType<typeof setInterval> | null>(null);
 
-const columns = [{ id: 'url', header: 'URL', accessorKey: 'url' }, { id: 'actions' }];
-
-const { data, status, refresh } = await useFetch('/api/requests');
-
-const isDownloading = ref<string | null>(null);
-
-// Un état plus riche pour la connexion
-type ConnectionStatus = { status: string; label: string; color: 'neutral' | 'success' | 'error' | 'warning' };
-const connection = ref<ConnectionStatus>({ status: '', label: 'Connecting...', color: 'neutral' });
-let channel: RealtimeChannel;
-
-const supabase = useSupabase();
-
-// Fonction pour gérer la mise à jour de l'état
-function setConnectionStatus(status: string, err?: Error) {
-  connection.value.status = status;
-  switch (status) {
-    case 'SUBSCRIBED':
-      connection.value.label = 'Connected';
-      connection.value.color = 'success';
-      break;
-    case 'CHANNEL_ERROR':
-    case 'TIMED_OUT':
-      connection.value.label = 'Connection Error';
-      connection.value.color = 'error';
-      if (err) console.error('Realtime Error:', err.message);
-      break;
-    case 'CLOSED':
-      connection.value.label = 'Disconnected';
-      connection.value.color = 'warning';
-      break;
-  }
-}
-
-const handleRealtimeUpdate = (payload: any) => {
-  console.log('Realtime update received:', payload);
-  refresh();
-};
-
-// Fonction pour s'abonner (ou se réabonner)
-const subscribeToChannel = () => {
-  // Si un canal existe déjà, on le supprime pour repartir de zéro proprement
-  if (channel) {
-    supabase.removeChannel(channel);
-  }
-
-  channel = supabase.channel('requests-channel');
-
-  channel
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, handleRealtimeUpdate)
-    .subscribe((status, err) => {
-      setConnectionStatus(status, err);
-    });
-};
+const columns = [
+  { id: 'cover', header: '', accessorKey: 'cover' },
+  { id: 'title', header: 'Titre', accessorKey: 'title' },
+  { id: 'artist', header: 'Artiste', accessorKey: 'artist' },
+  { id: 'actions' },
+];
 
 onMounted(() => {
-  subscribeToChannel();
+  adminStore.initialize();
+
+  interval.value = setInterval(() => {
+    adminStore.refreshDownloadedIds();
+  }, 10 * 1000);
 });
 
 onUnmounted(() => {
-  if (channel) {
-    supabase.removeChannel(channel);
-  }
+  adminStore.cleanupChannel();
+
+  if (interval.value) clearInterval(interval.value);
 });
-
-// Le reste de votre script (columns, useClipboard, etc.)
-
-const download = async (youtubeId: string) => {
-  try {
-    isDownloading.value = youtubeId;
-
-    await $fetch('/api/download', { method: 'POST', body: { id: youtubeId } });
-  } catch (error) {
-    console.error(error);
-    toast.add({ title: "Une erreur s'est produite", description: (error as Error).message, color: 'error' });
-  } finally {
-    isDownloading.value = null;
-  }
-};
 </script>

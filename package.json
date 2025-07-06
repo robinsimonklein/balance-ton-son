@@ -21,9 +21,11 @@
     "zod": "^3.25.74"
   },
   "devDependencies": {
+    "@pinia/nuxt": "^0.11.1",
     "@vueuse/nuxt": "^13.5.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "supabase": "^2.30.4"
   }
 }

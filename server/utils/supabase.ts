@@ -6,5 +6,5 @@ export const useSupabase = () => {
     public: { supabaseUrl },
   } = useRuntimeConfig();
 
-  return createClient(supabaseUrl, supabaseServiceKey);
+  return createClient<Database>(supabaseUrl, supabaseServiceKey);
 };

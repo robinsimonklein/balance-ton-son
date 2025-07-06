@@ -9,6 +9,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     downloadPath: process.env.NUXT_DOWNLOAD_PATH,
     supabaseServiceKey: process.env.NUXT_SUPABASE_SERVICE_KEY,
+    youtubeApiKey: process.env.NUXT_YOUTUBE_API_KEY,
     public: {
       isAdmin: process.env.NUXT_PUBLIC_IS_ADMIN || 'false',
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
@@ -23,7 +24,7 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@vueuse/nuxt', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
 
   ui: {

@@ -25,7 +25,7 @@ export default defineEventHandler(async event => {
     '--embed-metadata',
     '--embed-thumbnail',
     '-o',
-    `${downloadPath}/%(id)s.%(ext)s`,
+    `${downloadPath}/%(title)s [%(id)s].%(ext)s`,
   ];
 
   return new Promise((resolve, reject) => {

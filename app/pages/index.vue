@@ -28,7 +28,7 @@ const handleSubmit = async (event: FormSubmitEvent<{ url: string }>) => {
   try {
     isLoading.value = true;
 
-    await $fetch('/api/requests', {
+    await $fetch('/api/songs', {
       method: 'POST',
       body: event.data,
     });
